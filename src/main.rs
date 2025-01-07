@@ -6,7 +6,9 @@ use inquire::{Select, InquireError};
 
 fn main() {
     println!("Starting the ECS client...");
-    let cluster_arns = tokio::runtime::Runtime::new().unwrap().block_on(fetch_cluster_names());
+    let client = EcsClient::new(Region::UsEast1);
+
+    let cluster_arns = tokio::runtime::Runtime::new().unwrap().block_on(fetch_cluster_names(&client));
     let cluster_arns = cluster_arns.unwrap();
     let cluster_name_choice: Result<&str, InquireError> = Select::new("Choose your cluster?", cluster_arns.iter().map(|s| s.as_str()).collect()).prompt();
     match cluster_name_choice {
@@ -14,7 +16,7 @@ fn main() {
         Err(_) => println!("There was an error choosing the cluster name"),
     }
     println!("Listing the related services of the cluster...");
-    let service_arns = tokio::runtime::Runtime::new().unwrap().block_on(fetch_service_arns(&cluster_name_choice.unwrap()));
+    let service_arns = tokio::runtime::Runtime::new().unwrap().block_on(fetch_service_arns(&client, &cluster_name_choice.unwrap()));
     let service_arns = service_arns.unwrap();
     let service_name_choice: Result<&str, InquireError> = Select::new("Choose your service from the cluster?", service_arns.iter().map(|s| s.as_str()).collect()).prompt();
     match service_name_choice {
@@ -38,8 +40,7 @@ fn main() {
 }
 
 
-async fn fetch_cluster_names() -> Result<Vec<String>, rusoto_core::RusotoError<rusoto_ecs::ListClustersError>> {
-    let client = EcsClient::new(Region::UsEast1);
+async fn fetch_cluster_names(client: &EcsClient) -> Result<Vec<String>, rusoto_core::RusotoError<rusoto_ecs::ListClustersError>> {
 
     let request = ListClustersRequest::default();
 
@@ -56,8 +57,7 @@ async fn fetch_cluster_names() -> Result<Vec<String>, rusoto_core::RusotoError<r
 }
 
 
-async fn fetch_service_arns(cluster_arn: &str) -> Result<Vec<String>, rusoto_core::RusotoError<ListServicesError>> {
-    let client = EcsClient::new(Region::UsEast1);
+async fn fetch_service_arns(client: &EcsClient, cluster_arn: &str) -> Result<Vec<String>, rusoto_core::RusotoError<ListServicesError>> {
 
     let request = ListServicesRequest {
         cluster: Some(cluster_arn.to_string()),
@@ -74,4 +74,8 @@ async fn fetch_service_arns(cluster_arn: &str) -> Result<Vec<String>, rusoto_cor
         }
         Err(error) => Err(error),
     }
+}
+
+fn revive_ecs_service(cluster_arn: &str, service_arn: &str) {
+    println!("Reviving the ECS service...");
 }
