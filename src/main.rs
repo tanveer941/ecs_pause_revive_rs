@@ -1,5 +1,5 @@
 use rusoto_core::Region;
-use rusoto_ecs::{Ecs, EcsClient, ListClustersRequest, ListServicesRequest, ListServicesError};
+use rusoto_ecs::{Ecs, EcsClient, ListClustersRequest, ListServicesRequest};
 use tokio;
 use inquire::{Select, InquireError};
 
@@ -40,40 +40,21 @@ fn main() {
 }
 
 
-async fn fetch_cluster_names(client: &EcsClient) -> Result<Vec<String>, rusoto_core::RusotoError<rusoto_ecs::ListClustersError>> {
-
+async fn fetch_cluster_names(client: &EcsClient) -> Result<Vec<String>, anyhow::Error> {
     let request = ListClustersRequest::default();
-
-    match client.list_clusters(request).await {
-        Ok(output) => {
-            if let Some(cluster_arns) = output.cluster_arns {
-                Ok(cluster_arns)
-            } else {
-                Ok(vec![])
-            }
-        }
-        Err(error) => Err(error),
-    }
+    let output = client.list_clusters(request).await?;
+    let cluster_arns = output.cluster_arns.unwrap_or_else(Vec::new);
+    Ok(cluster_arns)
 }
 
-
-async fn fetch_service_arns(client: &EcsClient, cluster_arn: &str) -> Result<Vec<String>, rusoto_core::RusotoError<ListServicesError>> {
-
+async fn fetch_service_arns(client: &EcsClient, cluster_arn: &str) -> Result<Vec<String>, anyhow::Error> {
     let request = ListServicesRequest {
         cluster: Some(cluster_arn.to_string()),
         ..Default::default()
     };
-
-    match client.list_services(request).await {
-        Ok(output) => {
-            if let Some(service_arns) = output.service_arns {
-                Ok(service_arns)
-            } else {
-                Ok(vec![])
-            }
-        }
-        Err(error) => Err(error),
-    }
+    let output = client.list_services(request).await?;
+    let service_arns = output.service_arns.unwrap_or_else(Vec::new);
+    Ok(service_arns)
 }
 
 fn revive_ecs_service(cluster_arn: &str, service_arn: &str) {

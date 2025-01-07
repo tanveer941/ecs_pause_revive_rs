@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.95"
 inquire = "0.7.5"
 rusoto_core = "0.48.0"
 rusoto_ecs = "0.48.0"

@@ -15,7 +15,7 @@ cargo add rusoto_core
 cargo add rusoto_ecs
 
 cargo add inquire
-
+cargo add anyhow
 
 target/debug/ecs_pause_revive_rs
 
